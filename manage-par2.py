@@ -3,13 +3,15 @@
 manage-par2.
 
 Usage:
-  manage-par2 create [options] <SOURCEDIR> [<RECOVERYDIR>]
+  manage-par2 create [--fast] [-b <bvalue>] [-c <cvalue>] <SOURCEDIR> [<RECOVERYDIR>]
   manage-par2 list-outdated <SOURCEDIR> [<RECOVERYDIR>]
   manage-par2 delete-outdated <SOURCEDIR> [<RECOVERYDIR>]
   manage-par2 verify <SOURCEDIR> [<RECOVERYDIR>]
 
 Options:
     --fast      do not run as "background" process [default: False]
+    -b <bvalue>
+    -c <cvalue>
 """
 import os
 import re
@@ -44,12 +46,13 @@ def find_existing_files(source_dir, recovery_dir):
                 yield (source_path, recovery_file_path)
 
 
-def create_par2_data(missing_data, source_base_dir, *, redundancy_percentage=10):
+def create_par2_data(missing_data, source_base_dir, bvalue, cvalue):
     source_path, recovery_file_path = missing_data
     cmd = (
         'par2', 'create',
-        #'-qq',
-        '-r%d' % redundancy_percentage,
+        '-b'+bvalue,
+        '-c'+cvalue,
+        '-n1',
         '-B'+source_base_dir,
         recovery_file_path, source_path
     )
@@ -147,6 +150,8 @@ if __name__ == '__main__':
     list_outdated = arguments['list-outdated']
     delete_outdated = arguments['delete-outdated']
     verify = arguments['verify']
+    bvalue = arguments['-b']
+    cvalue = arguments['-c']
 
     if work_in_background:
         pid = os.getpid()
@@ -168,7 +173,7 @@ if __name__ == '__main__':
     if arguments['create']:
         missing_files = find_missing_files(source_dir, recovery_dir)
         for i, missing_data in enumerate(missing_files):
-            create_par2_data(missing_data, source_dir)
+            create_par2_data(missing_data, source_dir, bvalue, cvalue)
             sys.stdout.write('.')
             sys.stdout.flush()
     elif verify:
